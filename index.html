@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="nl" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiffMissie - Leer Differentiëren</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif;
+      background-image: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.12) 0%, transparent 50%);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Touch & responsive vriendelijke knoppen voor Chromebooks & Telefoons */
+    button {
+      min-height: 48px;
+      user-select: none;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.6); }
+    }
+    .glow-effect { animation: pulse-glow 4s infinite; }
+    .math-expr { display: inline-block; letter-spacing: 1px; }
+
+    /* Custom scrollbar voor theorie en reflectiescherm */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+
+  <!-- HEADER / MISSENAVIGATIE -->
+  <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-4 py-3 shadow-lg">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="showStartScreen()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-cyan-500 flex items-center justify-center font-bold text-xl shadow-lg shadow-indigo-500/20 text-white">
+          🚀
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-white leading-none tracking-wide">DiffMissie</h1>
+          <p class="text-xs text-indigo-300 font-medium">Navigeer met Afgeleides</p>
+        </div>
+      </div>
+
+      <!-- Live Game Stats (Hidden op startscherm) -->
+      <div id="stats-container" class="hidden flex items-center space-x-4 bg-slate-950 px-4 py-1.5 rounded-full border border-slate-700/50 text-sm">
+        <div class="flex items-center space-x-1.5" title="Streak">
+          <span class="text-amber-400">🔥</span>
+          <span id="streak-counter" class="font-bold text-amber-300">0</span>
+        </div>
+        <div class="h-4 w-px bg-slate-700"></div>
+        <div class="flex items-center space-x-1.5" title="Score">
+          <span class="text-emerald-400">⭐</span>
+          <span id="score-counter" class="font-bold text-emerald-300">0</span>
+        </div>
+        <div class="h-4 w-px bg-slate-700"></div>
+        <div class="flex items-center space-x-1.5" title="Tijd">
+          <span class="text-cyan-400">⏱️</span>
+          <span id="timer-display" class="font-mono font-bold text-cyan-300">00:00</span>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="flex items-center space-x-2">
+        <button id="sound-btn" onclick="toggleSound()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-slate-300 text-sm border border-slate-700 flex items-center gap-1" title="Geluid aan/uit">
+          <span id="sound-icon">🔊</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Level Progress Indicator (Hidden op startscherm) -->
+    <div id="progress-container" class="max-w-4xl mx-auto mt-3 hidden">
+      <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
+        <span>Sector <span id="current-lvl-num" class="text-indigo-400 font-bold">1</span> van 20</span>
+        <span id="phase-badge" class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">Fase 1: Startmotoren</span>
+      </div>
+      <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+        <div id="progress-bar-fill" class="bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HOOFDINHOUD CONTAINER -->
+  <main class="flex-grow flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl relative">
+
+      <!-- 1. START SCHERM -->
+      <div id="start-card" class="bg-slate-900/90 border border-slate-700 rounded-2xl p-6 sm:p-10 text-center shadow-2xl glow-effect backdrop-blur-sm">
+        <div class="inline-block p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 mb-6">
+          <span class="text-6xl">🌌</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-3 tracking-tight">Klaar voor lancering?</h2>
+        <p class="text-slate-300 text-sm sm:text-base mb-8 leading-relaxed max-w-lg mx-auto">
+          Jij bent de ruimtenavigator. Om de juiste koers te berekenen, moet je de <strong>afgeleide <span class="font-mono text-cyan-400">f'(x)</span></strong> van 20 functies bepalen. 
+          Hoe nauwkeuriger je werkt, hoe sneller je ruimteschip de bestemming bereikt!
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <button onclick="showFullTheory()" class="px-5 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-base shadow-lg border border-slate-600 transition flex items-center justify-center gap-2">
+            <span>📚</span> Bekijk Theorie
+          </button>
+          <button onclick="startGame()" class="px-7 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-bold text-lg shadow-lg shadow-indigo-500/25 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+            <span>🚀</span> Start Missie
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. VOLLEDIGE THEORIE MODAL -->
+      <div id="full-theory-card" class="hidden bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
+              <span>📚</span> Theorieboek: Differentiëren (2e Klas)
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Korte regels voor het berekenen van afgeleides</p>
+          </div>
+          <button onclick="hideFullTheory()" class="text-slate-400 hover:text-white bg-slate-800 p-2 rounded-lg transition">
+            ✕ Sluiten
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto space-y-6 text-slate-300 text-sm">
+          
+          <section class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <h3 class="text-base font-bold text-indigo-400 mb-2">1. Constante getallen & Lineaire termen</h3>
+            <ul class="list-disc pl-5 space-y-2 text-xs sm:text-sm">
+              <li><strong>Los getal (constante):</strong> Een los getal verandert niet, dus de afgeleide is altijd 0.<br><span class="font-mono text-cyan-300">f(x) = 8 ➔ f'(x) = 0</span></li>
+              <li><strong>Lineair met x:</strong> Bij een term met alleen $x$ blijft enkel het getal ervoor over.<br><span class="font-mono text-cyan-300">f(x) = 5x ➔ f'(x) = 5</span></li>
+            </ul>
+          </section>
+
+          <section class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <h3 class="text-base font-bold text-cyan-400 mb-2">2. De Machtsregel ($x^n$)</h3>
+            <p class="text-xs sm:text-sm mb-2">Om een macht van $x$ te differentiëren gebruik je 2 stappen:</p>
+            <ol class="list-decimal pl-5 space-y-1.5 text-xs sm:text-sm">
+              <li>Haal het getal uit de macht (de exponent) naar voren en vermenigvuldig ermee.</li>
+              <li>Trek 1 af van de macht.</li>
+            </ol>
+            <div class="mt-3 p-3 bg-slate-900 rounded-lg font-mono text-xs text-indigo-300 border border-slate-800">
+              f(x) = x³ ➔ f'(x) = 3x²<br>
+              f(x) = 4x⁵ ➔ f'(x) = (4 · 5)x⁴ = 20x⁴
+            </div>
+          </section>
+
+          <section class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <h3 class="text-base font-bold text-emerald-400 mb-2">3. De Somregel</h3>
+            <p class="text-xs sm:text-sm">Bestaat een formule uit meerdere termen met $+$ of $-$? Dan differentieer je elke term gewoon afzonderlijk!</p>
+            <div class="mt-2 p-3 bg-slate-900 rounded-lg font-mono text-xs text-emerald-300 border border-slate-800">
+              f(x) = 3x² + 7x - 4 ➔ f'(x) = 6x + 7
+            </div>
+          </section>
+
+        </div>
+
+        <div class="p-4 border-t border-slate-800 bg-slate-900">
+          <button onclick="hideFullTheory()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition text-center">
+            Begrepen! Terug naar de Missie
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. FASE / MICRO-THEORIE INTERRUPT CARD -->
+      <div id="phase-theory-card" class="hidden bg-slate-900 border border-indigo-500/50 rounded-2xl p-6 sm:p-8 shadow-2xl relative">
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xl">
+            💡
+          </div>
+          <h3 id="phase-theory-title" class="text-xl font-bold text-white">Nieuwe Sector Regels</h3>
+        </div>
+        
+        <div id="phase-theory-content" class="text-slate-300 text-sm mb-6 leading-relaxed">
+          <!-- Dynamisch gevuld via JS -->
+        </div>
+
+        <button onclick="hidePhaseTheory()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white font-bold transition shadow-lg text-base">
+          Start met Oefenen ➔
+        </button>
+      </div>
+
+      <!-- 5. GAMEPLAY SCHERM -->
+      <div id="game-card" class="hidden bg-slate-900 border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl relative">
+        
+        <!-- Vraag Header -->
+        <div class="flex justify-between items-center mb-6">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Bereken de afgeleide <span class="font-mono text-cyan-400">f'(x)</span>:
+          </span>
+          <div class="flex gap-2">
+            <button onclick="showWorkedExample()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/60 transition flex items-center gap-1">
+              <span>💡</span> Bekijk Werkvoorbeeld
+            </button>
+            <button onclick="showIngameHint()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition flex items-center gap-1">
+              <span>📖</span> Tip
+            </button>
+          </div>
+        </div>
+
+        <!-- Formule Weergave -->
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-center mb-6 shadow-inner relative overflow-hidden">
+          <div class="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] pointer-events-none opacity-20"></div>
+          
+          <div class="text-xs text-slate-500 mb-2 font-mono uppercase tracking-widest">Koers Functie f(x):</div>
+          <div id="math-question" class="text-2xl sm:text-4xl font-extrabold text-white font-mono tracking-wide math-expr drop-shadow-md">
+            f(x) = ...
+          </div>
+        </div>
+
+        <!-- Antwoorden Grid -->
+        <div id="options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+          <!-- Knoppen worden via JS gegenereerd -->
+        </div>
+
+        <!-- Feedback Banner met duidelijke vervolgstappen -->
+        <div id="feedback-banner" class="hidden p-4 rounded-xl border mb-4 text-sm flex items-start space-x-3 transition-all">
+          <span id="feedback-icon" class="text-2xl"></span>
+          <div class="w-full">
+            <h4 id="feedback-title" class="font-bold text-base"></h4>
+            <p id="feedback-text" class="text-xs mt-1 opacity-90 leading-relaxed"></p>
+            <div id="feedback-next-step" class="mt-2 pt-2 border-t border-slate-700/50 text-[11px] font-semibold text-cyan-300"></div>
+          </div>
+        </div>
+
+        <!-- Volgende Knop -->
+        <button id="next-btn" onclick="nextLevel()" class="hidden w-full py-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-lg shadow-cyan-600/25 text-lg">
+          Volgende Sector ➔
+        </button>
+
+      </div>
+
+      <!-- 6. RESULTATEN SCHERM -->
+      <div id="result-card" class="hidden bg-slate-900 border border-emerald-500/40 rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        
+        <div class="inline-block p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-6 relative z-10">
+          <span class="text-5xl">🏆</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-2 relative z-10">Missie Voltooid!</h2>
+        <p class="text-slate-300 text-sm mb-8 relative z-10">Je hebt de ruimte feilloos genavigeerd en alle 20 sectoren doorlopen.</p>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-3 gap-3 mb-8 text-center relative z-10">
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400 block mb-1">Eindscore</span>
+            <span id="final-score" class="text-2xl font-extrabold text-emerald-400">0</span>
+          </div>
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400 block mb-1">Totale Tijd</span>
+            <span id="final-time" class="text-2xl font-extrabold text-cyan-400 font-mono">00:00</span>
+          </div>
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400 block mb-1">Nauwkeurigheid</span>
+            <span id="final-accuracy" class="text-2xl font-extrabold text-amber-400">100%</span>
+          </div>
+        </div>
+
+        <button onclick="showStartScreen()" class="w-full py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition shadow-lg border border-slate-600 relative z-10">
+          🔄 Terug naar Missie Controle (Opnieuw)
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // --- LEVEL DATA (20 NIVEAUS VOOR 2E KLAS HAVO/VWO) ---
+    const levels = [
+      // Fase 1: Constanten & Lineaire functies
+      {
+        q: "f(x) = 8",
+        ans: "0",
+        opts: ["0", "8", "8x", "1"],
+        hint: "Een los getal heeft geen helling (verandert niet). De afgeleide is altijd 0.",
+        exp: "De afgeleide van een constant getal is 0 omdat de grafiek een horizontale lijn is.",
+        phase: 1,
+        phaseTitle: "Fase 1: Startmotoren (Constanten & Lineair)",
+        phaseDesc: "Welkom navigator! In Fase 1 leren we de basis. Een los getal verandert niet (afgeleide = 0). Bij een term als $5x$ blijft alleen het getal 5 over."
+      },
+      {
+        q: "f(x) = 4x",
+        ans: "4",
+        opts: ["4", "4x", "0", "x"],
+        hint: "Bij f(x) = a·x is de afgeleide simpelweg het getal a.",
+        exp: "De helling van de lijn y = 4x is constant 4.",
+        phase: 1
+      },
+      {
+        q: "f(x) = -3x",
+        ans: "-3",
+        opts: ["-3", "3", "-3x", "0"],
+        hint: "Let op het minteken! Het getal voor x blijft over.",
+        exp: "Het coëfficiënt voor x is -3, dus f'(x) = -3.",
+        phase: 1
+      },
+      {
+        q: "f(x) = 7x + 5",
+        ans: "7",
+        opts: ["7", "7x + 5", "12", "7x"],
+        hint: "Differentieer elke term apart: 7x wordt 7, en +5 wordt 0.",
+        exp: "f'(x) = 7 + 0 = 7.",
+        phase: 1
+      },
+      {
+        q: "f(x) = 12 - 2x",
+        ans: "-2",
+        opts: ["-2", "2", "12", "10"],
+        hint: "De 12 verdwijnt (0) en -2x wordt -2.",
+        exp: "12 wordt 0, -2x wordt -2. Dus f'(x) = -2.",
+        phase: 1
+      },
+
+      // Fase 2: De Machtsregel
+      {
+        q: "f(x) = x²",
+        ans: "2x",
+        opts: ["2x", "x", "2", "x²"],
+        hint: "Machtsregel: haal de macht (2) naar voren en trek 1 af van de exponent.",
+        exp: "De exponent 2 komt naar voren, nieuwe exponent wordt 1: 2x¹ = 2x.",
+        phase: 2,
+        phaseTitle: "Fase 2: De Machtsregel (xⁿ)",
+        phaseDesc: "Goed gewerkt! Nu gebruiken we de Machtsregel. Haal de exponent (de macht) naar voren als vermenigvuldiging en trek 1 af van de macht!"
+      },
+      {
+        q: "f(x) = x³",
+        ans: "3x²",
+        opts: ["3x²", "3x³", "x²", "3x"],
+        hint: "3 komt naar voren, macht wordt 3 - 1 = 2.",
+        exp: "3x^(3-1) = 3x².",
+        phase: 2
+      },
+      {
+        q: "f(x) = x⁵",
+        ans: "5x⁴",
+        opts: ["5x⁴", "5x⁵", "4x⁵", "5x"],
+        hint: "Vermenigvuldig met 5, nieuwe macht wordt 4.",
+        exp: "5x^(5-1) = 5x⁴.",
+        phase: 2
+      },
+      {
+        q: "f(x) = 3x²",
+        ans: "6x",
+        opts: ["6x", "3x", "6x²", "5x"],
+        hint: "Vermenigvuldig het getal voor de x met de macht: 3 · 2 = 6.",
+        exp: "Coëfficiënt x macht: 3 · 2 = 6. Nieuwe macht is 1. Dus 6x.",
+        phase: 2
+      },
+      {
+        q: "f(x) = 4x³",
+        ans: "12x²",
+        opts: ["12x²", "7x²", "12x³", "4x²"],
+        hint: "Vermenigvuldig 4 met 3, macht wordt 2.",
+        exp: "4 · 3 = 12, x^(3-1) = x². Samen 12x².",
+        phase: 2
+      },
+
+      // Fase 3: Somregel & Combinaties
+      {
+        q: "f(x) = 5x² + 3x",
+        ans: "10x + 3",
+        opts: ["10x + 3", "10x² + 3", "5x + 3", "10x"],
+        hint: "Differentieer 5x² (wordt 10x) en +3x (wordt +3).",
+        exp: "5 · 2x = 10x, 3x wordt 3. Dus f'(x) = 10x + 3.",
+        phase: 3,
+        phaseTitle: "Fase 3: De Somregel (Meerdere Termen)",
+        phaseDesc: "Je nadert de diepe ruimte! Als een functie uit meerdere termen bestaat (met + of -), differentiëren we gewoon term voor term afzonderlijk."
+      },
+      {
+        q: "f(x) = 2x³ - 4x²",
+        ans: "6x² - 8x",
+        opts: ["6x² - 8x", "6x³ - 8x²", "5x² - 8x", "6x² + 8x"],
+        hint: "2x³ ➔ 6x² en -4x² ➔ -8x.",
+        exp: "(2·3)x² - (4·2)x = 6x² - 8x.",
+        phase: 3
+      },
+      {
+        q: "f(x) = 3x⁴ + 2x - 7",
+        ans: "12x³ + 2",
+        opts: ["12x³ + 2", "12x³ + 2x", "12x³ - 7", "7x³ + 2"],
+        hint: "3x⁴ ➔ 12x³, +2x ➔ +2, -7 verdwijnt.",
+        exp: "3·4x³ + 2 - 0 = 12x³ + 2.",
+        phase: 3
+      },
+      {
+        q: "f(x) = -2x³ + 6x² - 5",
+        ans: "-6x² + 12x",
+        opts: ["-6x² + 12x", "-6x² + 6x", "6x² - 12x", "-6x³ + 12x"],
+        hint: "Let op de mintekens! -2 · 3 = -6.",
+        exp: "(-2·3)x² + (6·2)x - 0 = -6x² + 12x.",
+        phase: 3
+      },
+      {
+        q: "f(x) = 4x⁵ - 3x³ + 8x",
+        ans: "20x⁴ - 9x² + 8",
+        opts: ["20x⁴ - 9x² + 8", "20x⁴ - 9x²", "20x⁵ - 9x³ + 8", "9x⁴ - 6x² + 8"],
+        hint: "Drie termen: 4·5x⁴, -3·3x², +8.",
+        exp: "20x⁴ - 9x² + 8.",
+        phase: 3
+      },
+
+      // Fase 4: Meester-Challenges
+      {
+        q: "f(x) = 0.5x²",
+        ans: "x",
+        opts: ["x", "0.5x", "1", "x²"],
+        hint: "0.5 vermenigvuldigen met 2 geeft 1. 1x is simpelweg x.",
+        exp: "0.5 · 2 = 1. Dus 1x¹ = x.",
+        phase: 4,
+        phaseTitle: "Fase 4: Meester-Challenges (Breuken & Negatieven)",
+        phaseDesc: "Laatste sector! Hier combineren we breuken, komma-getallen en langere functies. Laat zien dat jij de beste ruimtenavigator bent!"
+      },
+      {
+        q: "f(x) = 0.2x⁵ + 3x²",
+        ans: "x⁴ + 6x",
+        opts: ["x⁴ + 6x", "0.2x⁴ + 6x", "x⁵ + 6x", "1x⁴ + 3x"],
+        hint: "0.2 · 5 = 1. Dus x⁴.",
+        exp: "(0.2·5)x⁴ + (3·2)x = 1x⁴ + 6x = x⁴ + 6x.",
+        phase: 4
+      },
+      {
+        q: "f(x) = ½x⁴ - 3x + 10",
+        ans: "2x³ - 3",
+        opts: ["2x³ - 3", "2x³ - 3x", "4x³ - 3", "½x³ - 3"],
+        hint: "½ · 4 = 2.",
+        exp: "(½·4)x³ - 3 = 2x³ - 3.",
+        phase: 4
+      },
+      {
+        q: "f(x) = 6x³ - 5x² + 7x - 12",
+        ans: "18x² - 10x + 7",
+        opts: ["18x² - 10x + 7", "18x² - 10x", "18x³ - 10x² + 7", "12x² - 5x + 7"],
+        hint: "Differentiëren van vier termen achter elkaar.",
+        exp: "18x² - 10x + 7 (het getal -12 verdwijnt).",
+        phase: 4
+      },
+      {
+        q: "f(x) = -x⁴ + 4x³ - ½x² + 9",
+        ans: "-4x³ + 12x² - x",
+        opts: ["-4x³ + 12x² - x", "-4x³ + 12x² - ½x", "-x³ + 12x² - x", "-4x³ + 7x² - x"],
+        hint: "-1 · 4 = -4, ½ · 2 = 1.",
+        exp: "f'(x) = -4x³ + 12x² - x.",
+        phase: 4
+      }
+    ];
+
+    // --- GAME STATE VARIABLES ---
+    let currentLevelIdx = 0;
+    let score = 0;
+    let streak = 0;
+    let totalAttempts = 0;
+    let correctAttempts = 0;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let soundEnabled = true;
+    let hasAnsweredCurrent = false;
+
+    // Web Audio Synthesizer (Geen externe audiobestanden nodig)
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'correct') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now); // A3
+          osc.frequency.setValueAtTime(164.81, now + 0.12); // E3
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'win') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(554.37, now + 0.1);
+          osc.frequency.setValueAtTime(659.25, now + 0.2);
+          osc.frequency.setValueAtTime(880, now + 0.3);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        } else if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        }
+      } catch (e) {
+        console.error("Audio error", e);
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      if (icon) icon.innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    // --- VIEW SCHAKELEN ---
+    function hideAllViews() {
+      ['start-card', 'full-theory-card', 'phase-theory-card', 'game-card', 'result-card'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+    }
+
+    function showStartScreen() {
+      hideAllViews();
+      document.getElementById('start-card').classList.remove('hidden');
+      document.getElementById('stats-container').classList.add('hidden');
+      document.getElementById('progress-container').classList.add('hidden');
+      stopTimer();
+    }
+
+    function showFullTheory() {
+      playSound('click');
+      hideAllViews();
+      document.getElementById('full-theory-card').classList.remove('hidden');
+    }
+
+    function hideFullTheory() {
+      playSound('click');
+      showStartScreen();
+    }
+
+    function hidePhaseTheory() {
+      playSound('click');
+      document.getElementById('phase-theory-card').classList.add('hidden');
+      document.getElementById('game-card').classList.remove('hidden');
+      loadLevel();
+    }
+
+    // --- GAME ENGINE ---
+    function startGame() {
+      playSound('click');
+      initAudio();
+      currentLevelIdx = 0;
+      score = 0;
+      streak = 0;
+      totalAttempts = 0;
+      correctAttempts = 0;
+      secondsElapsed = 0;
+
+      hideAllViews();
+      document.getElementById('stats-container').classList.remove('hidden');
+      document.getElementById('progress-container').classList.remove('hidden');
+      
+      updateStatsUI();
+      startTimer();
+      checkAndShowLevel();
+    }
+
+    function startTimer() {
+      stopTimer();
+      secondsElapsed = 0;
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+        const secs = String(secondsElapsed % 60).padStart(2, '0');
+        document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+    }
+
+    function checkAndShowLevel() {
+      const lvl = levels[currentLevelIdx];
+      
+      // Als dit de eerste vraag van een nieuwe fase is, toon de fase-uitleg
+      if (lvl.phaseTitle) {
+        hideAllViews();
+        document.getElementById('phase-theory-title').innerText = lvl.phaseTitle;
+        document.getElementById('phase-theory-content').innerHTML = `<p class="mb-2 font-medium">${lvl.phaseDesc}</p>`;
+        document.getElementById('phase-theory-card').classList.remove('hidden');
+      } else {
+        hideAllViews();
+        document.getElementById('game-card').classList.remove('hidden');
+        loadLevel();
+      }
+    }
+
+    function loadLevel() {
+      hasAnsweredCurrent = false;
+      const lvl = levels[currentLevelIdx];
+      const progressPct = ((currentLevelIdx) / levels.length) * 100;
+
+      // Update UI
+      document.getElementById('current-lvl-num').innerText = currentLevelIdx + 1;
+      document.getElementById('progress-bar-fill').style.width = `${progressPct}%`;
+      
+      let phaseText = "Fase 1: Startmotoren";
+      if (lvl.phase === 2) phaseText = "Fase 2: De Machtsregel";
+      if (lvl.phase === 3) phaseText = "Fase 3: De Somregel";
+      if (lvl.phase === 4) phaseText = "Fase 4: Meester-Challenges";
+      document.getElementById('phase-badge').innerText = phaseText;
+
+      document.getElementById('math-question').innerText = `f(x) = ${lvl.q}`;
+
+      // Antwoordopties shuffelen
+      const shuffledOpts = [...lvl.opts].sort(() => Math.random() - 0.5);
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+
+      shuffledOpts.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 border border-slate-700 transition font-mono text-base font-semibold text-white shadow flex items-center justify-center";
+        btn.innerHTML = `<span class="text-slate-400 mr-2 font-sans text-xs">f'(x) =</span> ${opt}`;
+        btn.onclick = () => selectOption(opt, btn);
+        grid.appendChild(btn);
+      });
+
+      // Reset feedback & volgende knop
+      document.getElementById('feedback-banner').classList.add('hidden');
+      document.getElementById('next-btn').classList.add('hidden');
+    }
+
+    function showWorkedExample() {
+      playSound('click');
+      const lvlNum = currentLevelIdx + 1;
+      let exampleTitle = "Machtsregel Werkvoorbeeld";
+      let exampleBody = `
+        <div class="space-y-3 text-xs sm:text-sm">
+          <p class="font-semibold text-cyan-300">Stappenplan afgeleide berekenen:</p>
+          <p><strong>Voorbeeld:</strong> $f(x) = 4x^3$</p>
+          <ol class="list-decimal pl-5 space-y-1 text-slate-300">
+            <li>Vermenigvuldig het getal voor $x$ met de macht: $4 \\cdot 3 = 12$.</li>
+            <li>Trek 1 af van de macht: $3 - 1 = 2$.</li>
+            <li>Resultaat: <span class="font-mono text-cyan-300 font-bold">f'(x) = 12x²</span></li>
+          </ol>
+        </div>
+      `;
+
+      if (lvlNum <= 5) {
+        exampleTitle = "Constante & Lineair Werkvoorbeeld";
+        exampleBody = `
+          <div class="space-y-3 text-xs sm:text-sm">
+            <p><strong>Voorbeeld 1:</strong> $f(x) = 7x \\rightarrow f'(x) = 7$ (x verdwijnt)</p>
+            <p><strong>Voorbeeld 2:</strong> $f(x) = 12 \\rightarrow f'(x) = 0$ (los getal verdwijnt)</p>
+          </div>
+        `;
+      }
+
+      hideAllViews();
+      document.getElementById('phase-theory-title').innerText = "💡 " + exampleTitle;
+      document.getElementById('phase-theory-content').innerHTML = exampleBody;
+      document.getElementById('phase-theory-card').classList.remove('hidden');
+    }
+
+    function showIngameHint() {
+      playSound('click');
+      const lvl = levels[currentLevelIdx];
+      const banner = document.getElementById('feedback-banner');
+      const icon = document.getElementById('feedback-icon');
+      const title = document.getElementById('feedback-title');
+      const text = document.getElementById('feedback-text');
+      const nextStep = document.getElementById('feedback-next-step');
+
+      banner.className = "p-4 rounded-xl border mb-4 text-sm flex items-start space-x-3 transition-all bg-indigo-950/80 border-indigo-500/50 text-indigo-200";
+      icon.innerText = "📖";
+      title.innerText = "Sectortip";
+      text.innerText = lvl.hint;
+      nextStep.innerText = "💡 Pas deze tip toe op de antwoordopties hieronder!";
+      banner.classList.remove('hidden');
+    }
+
+    function selectOption(selectedOpt, btnElement) {
+      if (hasAnsweredCurrent) return;
+      hasAnsweredCurrent = true;
+      totalAttempts++;
+
+      const lvl = levels[currentLevelIdx];
+      const isCorrect = (selectedOpt === lvl.ans);
+      const banner = document.getElementById('feedback-banner');
+      const icon = document.getElementById('feedback-icon');
+      const title = document.getElementById('feedback-title');
+      const text = document.getElementById('feedback-text');
+      const nextStep = document.getElementById('feedback-next-step');
+
+      const allBtns = document.getElementById('options-grid').querySelectorAll('button');
+      allBtns.forEach(b => b.disabled = true);
+
+      if (isCorrect) {
+        correctAttempts++;
+        streak++;
+        score += 100 + (streak * 25);
+        playSound('correct');
+
+        btnElement.classList.replace('bg-slate-800', 'bg-emerald-600');
+        btnElement.classList.replace('border-slate-700', 'border-emerald-400');
+
+        banner.className = "p-4 rounded-xl border mb-4 text-sm flex items-start space-x-3 transition-all bg-emerald-950/80 border-emerald-500/50 text-emerald-200";
+        icon.innerText = "✅";
+        title.innerText = "Correcte Koers!";
+        text.innerText = lvl.exp;
+        nextStep.innerText = "👉 Goed gedaan! Klik op 'Volgende Sector' om de koers te vervolgen.";
+      } else {
+        streak = 0;
+        playSound('wrong');
+
+        btnElement.classList.replace('bg-slate-800', 'bg-rose-700');
+        btnElement.classList.replace('border-slate-700', 'border-rose-400');
+
+        allBtns.forEach(b => {
+          if (b.innerText.includes(`f'(x) = ${lvl.ans}`)) {
+            b.classList.replace('bg-slate-800', 'bg-emerald-600/60');
+            b.classList.replace('border-slate-700', 'border-emerald-400/60');
+          }
+        });
+
+        banner.className = "p-4 rounded-xl border mb-4 text-sm flex items-start space-x-3 transition-all bg-rose-950/80 border-rose-500/50 text-rose-200";
+        icon.innerText = "💥";
+        title.innerText = `Juiste afgeleide: f'(x) = ${lvl.ans}`;
+        text.innerText = lvl.exp;
+        nextStep.innerText = "👉 Onthoud deze regel! In het volgende level pas je dezelfde methode toe.";
+      }
+
+      banner.classList.remove('hidden');
+      document.getElementById('next-btn').classList.remove('hidden');
+      updateStatsUI();
+    }
+
+    function updateStatsUI() {
+      document.getElementById('streak-counter').innerText = streak;
+      document.getElementById('score-counter').innerText = score;
+    }
+
+    function nextLevel() {
+      playSound('click');
+      currentLevelIdx++;
+      if (currentLevelIdx >= levels.length) {
+        finishGame();
+      } else {
+        checkAndShowLevel();
+      }
+    }
+
+    function finishGame() {
+      stopTimer();
+      playSound('win');
+      hideAllViews();
+      
+      document.getElementById('progress-bar-fill').style.width = '100%';
+      document.getElementById('result-card').classList.remove('hidden');
+      document.getElementById('final-score').innerText = score;
+      document.getElementById('final-time').innerText = document.getElementById('timer-display').innerText;
+      
+      const accuracyPct = Math.round((correctAttempts / Math.max(1, totalAttempts)) * 100);
+      document.getElementById('final-accuracy').innerText = `${accuracyPct}%`;
+    }
+
+    // Startup Init
+    window.onload = function() {
+      showStartScreen();
+    };
+  </script>
+</body>
+</html>
