@@ -124,7 +124,7 @@
         <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950">
           <div>
             <h2 class="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
-              <span>📚</span> Theorieboek: Differentiëren (2e Klas)
+              <span>📚</span> Theorieboek: Differentiëren (4e Klas)
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">Korte regels voor het berekenen van afgeleides</p>
           </div>
@@ -213,7 +213,7 @@
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-center mb-6 shadow-inner relative overflow-hidden">
           <div class="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] pointer-events-none opacity-20"></div>
           
-          <div class="text-xs text-slate-500 mb-2 font-mono uppercase tracking-widest">Koers Functie f(x):</div>
+          <div class="text-xs text-slate-500 mb-2 font-mono uppercase tracking-widest">Koers Functie:</div>
           <div id="math-question" class="text-2xl sm:text-4xl font-extrabold text-white font-mono tracking-wide math-expr drop-shadow-md">
             f(x) = ...
           </div>
@@ -277,7 +277,7 @@
   </main>
 
   <script>
-    // --- LEVEL DATA (20 NIVEAUS VOOR 2E KLAS HAVO/VWO) ---
+    // --- LEVEL DATA (20 NIVEAUS VOOR 4E KLAS HAVO/VWO) ---
     const levels = [
       // Fase 1: Constanten & Lineaire functies
       {
@@ -634,7 +634,8 @@
       if (lvl.phase === 4) phaseText = "Fase 4: Meester-Challenges";
       document.getElementById('phase-badge').innerText = phaseText;
 
-      document.getElementById('math-question').innerText = `f(x) = ${lvl.q}`;
+      // Hier is de tekst `f(x) = ${lvl.q}` aangepast naar `lvl.q` zodat er niet dubbel f(x) = f(x) = komt te staan
+      document.getElementById('math-question').innerText = lvl.q;
 
       // Antwoordopties shuffelen
       const shuffledOpts = [...lvl.opts].sort(() => Math.random() - 0.5);
